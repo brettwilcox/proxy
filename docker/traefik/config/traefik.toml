@@ -97,7 +97,7 @@
 ################################################################
 
 # Enable API and dashboard
-[api]
+#[api]
 
   # Name of the related entry point
   #
@@ -113,7 +113,7 @@
   #
   # dashboard = false
 
-  insecure = true
+#  insecure = true
 
 ################################################################
 # Ping configuration

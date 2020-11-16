@@ -7,38 +7,25 @@ networks:
 services:
   ### Traefik
   traefik:
+    labels:
+      - "traefik.frontend.rule=Host:${SERVICE_NAME}.${DOMAIN}"
+      - "traefik.docker.network=proxy-net"
+      - "traefik.port=8080"
+      - "traefik.enable=true"
     environment:
       - APP_VER
-      - CF_DNS_API_TOKEN
       - CF_API_EMAIL
+      - CF_DNS_API_TOKEN
+      - DASHBOARD
       - DNS_CHALLENGE
       - DOCKER_TRAEFIK_VER
       - DOMAIN
+      - INSECURE
+      - LOG_LEVEL
       - PROVIDER
       - SERVICE_NAME
-    build:
-      context: "./docker/traefik"
-      args:
-        - "APP_VER=${APP_VER}"
-        - "CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}"
-        - "CF_API_EMAIL=${CF_API_EMAIL}"
-        - "DNS_CHALLENGE=${DNS_CHALLENGE}"
-        - "DOCKER_TRAEFIK_VER=${DOCKER_TRAEFIK_VER}"
-        - "DOMAIN=${DOMAIN}"
-        - "PROVIDER=${PROVIDER}"
-        - "SERVICE_NAME=${SERVICE_NAME}"
-    command:
-        # Enable a dns challenge named "letsencrypt"
-      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=${DNS_CHALLENGE}"
-        # Tell which provider to use
-      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=${PROVIDER}"
-      # The email to provide to let's encrypt
-      - "--certificatesresolvers.letsencrypt.acme.email=${CF_API_EMAIL}"
-      # Certificate storage location.
-      - "--certificatesresolvers.letsencrypt.acme.storage=/data/certs/acme.json"
-      # Uncomment the following lines if you would like to debug
-      #- "--log.level=DEBUG"
-      #- "--certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+    networks:
+      - "traefik-proxy-network"
     ports:
       - "80:80"
       - "443:443"
@@ -47,10 +34,29 @@ services:
       - "./data/certs:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock"
     restart: "always"
-    networks:
-      - "traefik-proxy-network"
-    labels:
-      - "traefik.frontend.rule=Host:${SERVICE_NAME}.${DOMAIN}"
-      - "traefik.docker.network:proxy-net"
-      - "traefik.port=8080"
-      - "traefik.enable=true"
+    build:
+      context: "./docker/traefik"
+      args:
+        - "DOCKER_TRAEFIK_VER=${DOCKER_TRAEFIK_VER}"
+    command:
+      # Should the dashboard be enabled?
+      - "--api.insecure=${INSECURE}"
+      - "--api.dashboard=${DASHBOARD}"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      # Enable ping
+      - "--ping"
+      - "--entryPoints.http.address=:80"
+      - "--entrypoints.https.address=:443"
+      # Enable automated DNS challenges for SSL?
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=${DNS_CHALLENGE}"
+      # What provider should be used.
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=${PROVIDER}"
+      # The email to provide to let's encrypt
+      - "--certificatesresolvers.letsencrypt.acme.email=${CF_API_EMAIL}"
+      # Certificate storage location.
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      # Uncomment the following lines if you would like to debug
+      #- "--certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      # Enable or disable debug mode
+      - "--log.level=${LOG_LEVEL}"

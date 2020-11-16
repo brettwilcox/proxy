@@ -3,3 +3,6 @@
 
 # env file
 .env
+
+# Ignore certificate files
+/data/certs/acme.json
