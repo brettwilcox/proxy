@@ -1,6 +1,5 @@
-#ARG TRAEFIC_VER=${TRAEFIC_VER}
-#FROM traefik:${TRAEFIC_VER}
+ARG DOCKER_TRAEFIK_VER=${DOCKER_TRAEFIK_VER}
 
-FROM traefik:2.1.2
+FROM traefik:${DOCKER_TRAEFIK_VER}
 
 COPY ./config/traefik.toml /etc/traefik/traefik.toml

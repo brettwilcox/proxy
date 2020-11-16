@@ -1,45 +1,56 @@
-version: "3"
+version: "3.8"
 
 networks:
-  frontend:
-    driver: bridge
-  backend:
-    driver: bridge
+  traefik-proxy-network:
+    name: proxy-net
 
 services:
-  ### Traefik ################################
+  ### Traefik
   traefik:
+    environment:
+      - APP_VER
+      - CF_DNS_API_TOKEN
+      - CF_API_EMAIL
+      - DNS_CHALLENGE
+      - DOCKER_TRAEFIK_VER
+      - DOMAIN
+      - PROVIDER
+      - SERVICE_NAME
     build:
-      context: ./docker/traefik
+      context: "./docker/traefik"
+      args:
+        - "APP_VER=${APP_VER}"
+        - "CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}"
+        - "CF_API_EMAIL=${CF_API_EMAIL}"
+        - "DNS_CHALLENGE=${DNS_CHALLENGE}"
+        - "DOCKER_TRAEFIK_VER=${DOCKER_TRAEFIK_VER}"
+        - "DOMAIN=${DOMAIN}"
+        - "PROVIDER=${PROVIDER}"
+        - "SERVICE_NAME=${SERVICE_NAME}"
+    command:
+        # Enable a dns challenge named "letsencrypt"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=${DNS_CHALLENGE}"
+        # Tell which provider to use
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=${PROVIDER}"
+      # The email to provide to let's encrypt
+      - "--certificatesresolvers.letsencrypt.acme.email=${CF_API_EMAIL}"
+      # Certificate storage location.
+      - "--certificatesresolvers.letsencrypt.acme.storage=/data/certs/acme.json"
+      # Uncomment the following lines if you would like to debug
+      #- "--log.level=DEBUG"
+      #- "--certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
     ports:
       - "80:80"
+      - "443:443"
       - "8080:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    restart: always
+      - "./data/certs:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    restart: "always"
     networks:
-      - backend
-      - frontend
+      - "traefik-proxy-network"
     labels:
-      - traefik.entryPoints.web.forwardedHeaders.trustedIPs=172.18.0.0/16
-
-  ### NGINX Server #######################################
-  nginx:
-    build:
-      context: ./docker/nginx
-    restart: always
-    volumes:
-      - ./:/var/www
-      - ./docker/nginx/conf/default.conf:/etc/nginx/conf.d/default.conf
-    networks:
-      - backend
-      - frontend
-    labels:
+      - "traefik.frontend.rule=Host:${SERVICE_NAME}.${DOMAIN}"
+      - "traefik.docker.network:proxy-net"
+      - "traefik.port=8080"
       - "traefik.enable=true"
-      - "traefik.port=80"
-      - "traefik.http.routers.web.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.web.priority=1"
-      - "traefik.docker.network=backend"
-      #- "traefik.http.routers.web.middlewares=whiteList"
-      #- "traefik.http.middlewares.whiteList.ipwhitelist.sourcerange=127.0.0.1/32, 192.168.1.1/32, 172.17.0.1/32, 172.18.0.1/32"
-      #- "traefik.http.middlewares.whiteList.ipwhitelist.ipstrategy.depth=2"
