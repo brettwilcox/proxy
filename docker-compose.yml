@@ -52,7 +52,7 @@ services:
       - "--ping"
       - "--entryPoints.http.address=:80"
       - "--entrypoints.https.address=:443"
-      --entrypoints.https.http.tls=true
+      - "--entrypoints.https.http.tls=true"
       # Enable automated DNS challenges for SSL?
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge=${DNS_CHALLENGE}"
       # What provider should be used.
