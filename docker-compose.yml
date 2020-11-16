@@ -13,9 +13,9 @@ services:
       - "traefik.port=8080"
       - "traefik.enable=true"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.routers.redirs.rule=hostregexp(`{host:.+}`)"
-      - "traefik.http.routers.redirs.entrypoints=http"
-      - "traefik.http.routers.redirs.middlewares=redirect-to-https"
+      - "traefik.http.routers.redirects.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.redirects.entrypoints=http"
+      - "traefik.http.routers.redirects.middlewares=redirect-to-https"
     environment:
       - APP_VER
       - CF_API_EMAIL
