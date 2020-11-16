@@ -12,6 +12,10 @@ services:
       - "traefik.docker.network=proxy-net"
       - "traefik.port=8080"
       - "traefik.enable=true"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.redirs.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.redirs.entrypoints=http"
+      - "traefik.http.routers.redirs.middlewares=redirect-to-https"
     environment:
       - APP_VER
       - CF_API_EMAIL
@@ -48,6 +52,7 @@ services:
       - "--ping"
       - "--entryPoints.http.address=:80"
       - "--entrypoints.https.address=:443"
+      --entrypoints.https.http.tls=true
       # Enable automated DNS challenges for SSL?
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge=${DNS_CHALLENGE}"
       # What provider should be used.
